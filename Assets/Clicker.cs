@@ -1,51 +1,74 @@
 using UnityEngine;
 using TMPro;
+using UnityEngine.UI;
 
 public class Clicker : MonoBehaviour
 {
-    public float score = 0f;               // Dina kebabs
-    public float kebabsPerClick = 1f;      // Poäng per klick
-    public float kebabsPerSecond = 0f;     // Passiv poäng per sekund
+    public float score = 0f;
+    public float kebabsPerClick = 1f;
+    public float kebabsPerSecond = 0f;
 
-    public TextMeshProUGUI scoreText;      // Text som visar poängen
+    public TextMeshProUGUI scoreText;
+
+    [Header("Uppgraderingar")]
+    public Upgrade[] upgrades;            // Lista med alla uppgraderingar
+    public Button[] upgradeButtons;       // Knappar kopplade till varje uppgradering
+    public TextMeshProUGUI[] upgradeTexts; // Text på varje knapp
 
     void Start()
     {
         UpdateUI();
-        // Kör AddPassive varje sekund
         InvokeRepeating(nameof(AddPassive), 1f, 1f);
+        RefreshUpgradeButtons();
     }
 
-    // Klick på kebab-knappen
     public void AddScore()
     {
         score += kebabsPerClick;
         UpdateUI();
+        RefreshUpgradeButtons();
     }
 
-    // Köp grill som ger passiva kebabs
-    public void BuyGrill()
+    public void BuyUpgrade(int index)
     {
-        float cost = 10f;
-        if (score >= cost)
+        if (index < 0 || index >= upgrades.Length) return;
+
+        Upgrade upg = upgrades[index];
+        if (score >= upg.cost)
         {
-            score -= cost;
-            kebabsPerSecond += 0.1f; // Nu ger den 0.1 kebab/s
+            score -= upg.cost;
+            kebabsPerSecond += upg.bonusPerSec;
+
+            // Öka kostnaden varje gång (t.ex. 15% dyrare)
+            upg.cost *= 1.15f;
+
             UpdateUI();
+            RefreshUpgradeButtons();
         }
     }
 
-    // Passiv inkomst
     void AddPassive()
     {
         score += kebabsPerSecond;
         UpdateUI();
+        RefreshUpgradeButtons();
     }
 
     void UpdateUI()
     {
-        // Visar 1 decimal, t.ex. 12.3
         scoreText.text = "Kebabs: " + score.ToString("F1");
+    }
+
+    void RefreshUpgradeButtons()
+    {
+        for (int i = 0; i < upgrades.Length; i++)
+        {
+            if (upgradeTexts.Length > i)
+                upgradeTexts[i].text = $"{upgrades[i].name} (+{upgrades[i].bonusPerSec}/s) Kostar: {upgrades[i].cost:F1}";
+
+            if (upgradeButtons.Length > i)
+                upgradeButtons[i].interactable = score >= upgrades[i].cost;
+        }
     }
 }
 
